@@ -6,10 +6,26 @@
 const BACKEND_BASE_URL =
   process.env.API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:4000'
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:4000' : '')
+
+const BACKEND_TIMEOUT_MS = 15000
+
+function getBackendBaseUrl(): string {
+  const baseUrl = BACKEND_BASE_URL.trim()
+
+  if (!baseUrl) {
+    throw new Error('Backend URL no configurada para este entorno')
+  }
+
+  if (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost')) {
+    throw new Error('Backend URL invalida para produccion')
+  }
+
+  return baseUrl
+}
 
 function buildTargetUrl(pathSegments: string[], request: Request): string {
-  const target = new URL(pathSegments.join('/'), `${BACKEND_BASE_URL.replace(/\/$/, '')}/`)
+  const target = new URL(pathSegments.join('/'), `${getBackendBaseUrl().replace(/\/$/, '')}/`)
   const incomingUrl = new URL(request.url)
 
   // Conserva query params (?a=1&b=2)
@@ -21,29 +37,49 @@ async function proxyRequest(
   request: Request,
   context: { params: Promise<{ path: string[] }> }
 ): Promise<Response> {
-  const { path } = await context.params
-  const targetUrl = buildTargetUrl(path, request)
+  try {
+    const { path } = await context.params
+    const targetUrl = buildTargetUrl(path, request)
 
-  const outgoingHeaders = new Headers(request.headers)
-  outgoingHeaders.delete('host')
-  outgoingHeaders.delete('content-length')
+    const outgoingHeaders = new Headers(request.headers)
+    outgoingHeaders.delete('host')
+    outgoingHeaders.delete('content-length')
 
-  const method = request.method.toUpperCase()
-  const hasBody = method !== 'GET' && method !== 'HEAD'
+    const method = request.method.toUpperCase()
+    const hasBody = method !== 'GET' && method !== 'HEAD'
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => abortController.abort(), BACKEND_TIMEOUT_MS)
 
-  const backendResponse = await fetch(targetUrl, {
-    method,
-    headers: outgoingHeaders,
-    body: hasBody ? request.body : undefined,
-    redirect: 'manual',
-    duplex: hasBody ? 'half' : undefined,
-  } as RequestInit & { duplex?: 'half' })
+    try {
+      const backendResponse = await fetch(targetUrl, {
+        method,
+        headers: outgoingHeaders,
+        body: hasBody ? request.body : undefined,
+        redirect: 'manual',
+        duplex: hasBody ? 'half' : undefined,
+        signal: abortController.signal,
+      } as RequestInit & { duplex?: 'half' })
 
-  return new Response(backendResponse.body, {
-    status: backendResponse.status,
-    statusText: backendResponse.statusText,
-    headers: backendResponse.headers,
-  })
+      return new Response(backendResponse.body, {
+        status: backendResponse.status,
+        statusText: backendResponse.statusText,
+        headers: backendResponse.headers,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  } catch (error) {
+    const message = error instanceof Error && error.name === 'AbortError'
+      ? 'El backend no respondió a tiempo'
+      : 'Backend no configurado o inaccesible'
+
+    return Response.json(
+      {
+        error: message,
+      },
+      { status: 504 }
+    )
+  }
 }
 
 export async function GET(
