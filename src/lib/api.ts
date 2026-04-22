@@ -52,7 +52,14 @@ async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}`
+  // Soporta endpoints con o sin prefijos heredados (/api o /api/v1)
+  // para evitar rutas duplicadas como /api/api/v1/... en producción.
+  const normalizedEndpoint = endpoint
+    .replace(/^\/+/, '')
+    .replace(/^api\/v1\/?/, '')
+    .replace(/^api\/?/, '')
+
+  const url = `${API_BASE_URL.replace(/\/+$/, '')}/${normalizedEndpoint}`
 
   // Obtener token del localStorage si existe
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null

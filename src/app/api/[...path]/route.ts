@@ -42,16 +42,33 @@ function getBackendBaseUrl(): string {
   return baseUrl
 }
 
+function normalizePathSegments(pathSegments: string[]): string[] {
+  const cleaned = pathSegments
+    .map((segment) => segment.replace(/^\/+|\/+$/g, ''))
+    .filter(Boolean)
+
+  if (cleaned.length >= 2 && cleaned[0] === 'api' && cleaned[1] === 'v1') {
+    return cleaned.slice(2)
+  }
+
+  if (cleaned.length >= 1 && cleaned[0] === 'api') {
+    return cleaned.slice(1)
+  }
+
+  return cleaned
+}
+
 function buildTargetUrl(pathSegments: string[], request: Request): string {
   const baseUrl = new URL(getBackendBaseUrl())
   const basePath = baseUrl.pathname.replace(/\/+$/, '')
   const normalizedPrefix = BACKEND_API_PREFIX.replace(/\/+$/, '')
   const shouldAppendPrefix = !basePath.endsWith(normalizedPrefix)
+  const normalizedSegments = normalizePathSegments(pathSegments)
 
   const finalPath = [
     basePath,
     shouldAppendPrefix ? normalizedPrefix : '',
-    pathSegments.join('/'),
+    normalizedSegments.join('/'),
   ]
     .filter(Boolean)
     .join('/')
