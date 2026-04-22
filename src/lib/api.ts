@@ -46,7 +46,7 @@ async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.replace(/^\/+/, '')}`
+  const url = `${API_BASE_URL.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}`
 
   // Obtener token del localStorage si existe
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null

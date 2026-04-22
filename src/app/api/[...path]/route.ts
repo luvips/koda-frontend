@@ -94,15 +94,28 @@ async function proxyRequest(
     const abortController = new AbortController()
     const timeoutId = setTimeout(() => abortController.abort(), BACKEND_TIMEOUT_MS)
 
+    // Leer el body completo antes de reenviarlo.
+    // request.body como ReadableStream puede fallar en Vercel con duplex:half,
+    // así que lo consumimos primero y lo pasamos como Buffer.
+    let bodyBuffer: ArrayBuffer | undefined
+    if (hasBody) {
+      try {
+        bodyBuffer = await request.arrayBuffer()
+      } catch {
+        bodyBuffer = undefined
+      }
+    }
+
     try {
       const backendResponse = await fetch(targetUrl, {
         method,
         headers: outgoingHeaders,
-        body: hasBody ? request.body : undefined,
+        body: hasBody && bodyBuffer && bodyBuffer.byteLength > 0
+          ? bodyBuffer
+          : undefined,
         redirect: 'manual',
-        duplex: hasBody ? 'half' : undefined,
         signal: abortController.signal,
-      } as RequestInit & { duplex?: 'half' })
+      })
 
       return new Response(backendResponse.body, {
         status: backendResponse.status,
