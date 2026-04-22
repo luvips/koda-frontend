@@ -3,9 +3,7 @@
 /**
  * RegisterForm.tsx
  * Formulario de registro con validación Zod + React Hook Form.
- *
- * Comportamiento mock:
- *  - Cualquier dato válido → toast.success("Cuenta creada") + redirect /test
+ * Conectado al backend de AWOS para registro real de usuarios.
  *
  * Incluye el indicador de fuerza de contraseña (PasswordStrength).
  */
@@ -20,18 +18,24 @@ import { User, Mail, Eye, EyeOff, Lock } from 'lucide-react';
 import { CyberInput } from '@/components/ui/CyberInput';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { PasswordStrength } from './PasswordStrength';
+import { register as registerUser, ApiError } from '@/lib/api';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
 /**
  * Validación del formulario de registro.
  * El refine verifica que password y confirm coincidan.
+ * Las reglas de password deben coincidir con el backend.
  */
 const registerSchema = z
   .object({
     name:     z.string().min(2, 'Mínimo 2 caracteres'),
     email:    z.string().email('Email inválido'),
-    password: z.string().min(8, 'Mínimo 8 caracteres'),
+    password: z
+      .string()
+      .min(8, 'Mínimo 8 caracteres')
+      .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula')
+      .regex(/[0-9]/, 'Debe incluir al menos un número'),
     confirm:  z.string(),
   })
   .refine((data) => data.password === data.confirm, {
@@ -50,7 +54,7 @@ export function RegisterForm() {
   const [showPassword, setShowPassword]  = useState(false);
   const [showConfirm,  setShowConfirm]   = useState(false);
 
-  // Estado de carga durante el submit mock
+  // Estado de carga durante el submit
   const [isLoading, setIsLoading] = useState(false);
 
   // Configuración de React Hook Form con resolver Zod
@@ -58,6 +62,7 @@ export function RegisterForm() {
     register,
     handleSubmit,
     watch,
+    setError,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -68,15 +73,46 @@ export function RegisterForm() {
 
   // ── Handler de submit ──────────────────────────────────────────────────────
 
-  async function onSubmit(_data: RegisterFormValues) {
+  async function onSubmit(data: RegisterFormValues) {
     setIsLoading(true);
 
-    // Simula latencia de red de 1.5 segundos
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      // Llamar al backend para registrar usuario
+      const response = await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
 
-    // Mock: cualquier dato válido crea la cuenta exitosamente
-    toast.success('¡Cuenta creada! Bienvenido a AWOS 🚀');
-    router.push('/test');
+      // Registro exitoso
+      toast.success(`¡Cuenta creada! Bienvenido ${response.data.user.name} 🚀`);
+      router.push('/test');
+    } catch (error) {
+      // Manejar errores del backend
+      const apiError = error as ApiError;
+
+      if (apiError.details) {
+        // Errores de validación (400)
+        Object.entries(apiError.details).forEach(([field, messages]) => {
+          setError(field as keyof RegisterFormValues, {
+            message: messages[0],
+          });
+        });
+        toast.error('Por favor corrige los errores');
+      } else if (apiError.error === 'Email already registered') {
+        // Email duplicado (409)
+        setError('email', { message: 'Este email ya está registrado' });
+        toast.error('Este email ya está registrado');
+      } else if (apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
+        // Rate limit (429)
+        toast.error('Demasiados intentos. Intenta en 15 minutos.');
+      } else {
+        // Error genérico
+        toast.error('Error al crear la cuenta. Intenta de nuevo.');
+      }
+
+      setIsLoading(false);
+    }
   }
 
   return (

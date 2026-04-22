@@ -3,12 +3,7 @@
 /**
  * LoginForm.tsx
  * Formulario de inicio de sesión con validación Zod + React Hook Form.
- *
- * Comportamiento mock:
- *  - Credenciales "test@awos.dev" / "Test1234!" → toast.success + redirect /dashboard
- *  - Cualquier otro dato → toast.error + marca ambos campos con error
- *
- * El submit simula 1.5s de latencia de red antes de resolver.
+ * Conectado al backend de AWOS para autenticación real.
  */
 
 import { useState } from 'react';
@@ -20,6 +15,7 @@ import toast from 'react-hot-toast';
 import { Mail, Eye, EyeOff } from 'lucide-react';
 import { CyberInput } from '@/components/ui/CyberInput';
 import { CyberButton } from '@/components/ui/CyberButton';
+import { login, ApiError } from '@/lib/api';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
@@ -34,11 +30,6 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-// ─── Credenciales mock válidas ────────────────────────────────────────────────
-
-const VALID_EMAIL    = 'test@awos.dev';
-const VALID_PASSWORD = 'Test1234!';
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function LoginForm() {
@@ -47,7 +38,7 @@ export function LoginForm() {
   // Estado para mostrar/ocultar la contraseña
   const [showPassword, setShowPassword] = useState(false);
 
-  // Estado de carga durante el submit mock
+  // Estado de carga durante el submit
   const [isLoading, setIsLoading] = useState(false);
 
   // Configuración de React Hook Form con resolver Zod
@@ -65,18 +56,38 @@ export function LoginForm() {
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true);
 
-    // Simula latencia de red de 1.5 segundos
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      // Llamar al backend para autenticar
+      const response = await login(data);
 
-    if (data.email === VALID_EMAIL && data.password === VALID_PASSWORD) {
-      // Credenciales correctas → toast de bienvenida + redirect
-      toast.success('Bienvenido de nuevo 👾');
+      // Login exitoso
+      toast.success(`Bienvenido de nuevo, ${response.data.user.name}! 👾`);
       router.push('/dashboard');
-    } else {
-      // Credenciales incorrectas → marcar ambos campos con error
-      setError('email',    { message: 'Credenciales incorrectas' });
-      setError('password', { message: 'Credenciales incorrectas' });
-      toast.error('Credenciales incorrectas');
+    } catch (error) {
+      // Manejar errores del backend
+      const apiError = error as ApiError;
+
+      if (apiError.details) {
+        // Errores de validación (400)
+        Object.entries(apiError.details).forEach(([field, messages]) => {
+          setError(field as keyof LoginFormValues, {
+            message: messages[0],
+          });
+        });
+        toast.error('Por favor corrige los errores');
+      } else if (apiError.error === 'Invalid credentials') {
+        // Credenciales incorrectas (401)
+        setError('email', { message: 'Credenciales incorrectas' });
+        setError('password', { message: 'Credenciales incorrectas' });
+        toast.error('Credenciales incorrectas');
+      } else if (apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
+        // Rate limit (429)
+        toast.error('Demasiados intentos. Intenta en 15 minutos.');
+      } else {
+        // Error genérico
+        toast.error('Error al iniciar sesión. Intenta de nuevo.');
+      }
+
       setIsLoading(false);
     }
   }
@@ -153,7 +164,7 @@ export function LoginForm() {
         Ingresar →
       </CyberButton>
 
-      {/* Hint de credenciales mock para facilitar el testing */}
+      {/* Hint de credenciales de prueba */}
       <p
         className="text-center font-mono text-xs"
         style={{ color: '#222222' }}
