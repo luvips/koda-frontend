@@ -132,6 +132,7 @@ export default function TestPage() {
         code: snippet.code,
         difficulty: snippet.difficulty,
         tags: snippet.tags,
+        languageId: snippet.id,
         language: {
           id: snippet.id,
           name: snippet.language.name,
