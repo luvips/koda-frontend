@@ -1,26 +1,299 @@
 @import "tailwindcss";
 
+/* ─── Variables de color KODA ─────────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
+  --cyan:    #00ffff;
+  --magenta: #ff00ff;
+  --lime:    #00ff00;
+  --yellow:  #ffff00;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ─── Base ────────────────────────────────────────────────────────────────── */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+/* ─── Animación: scanline ─────────────────────────────────────────────────── */
+/*
+ * Línea de escaneo que baja de arriba a abajo sobre el hero.
+ * Se aplica via pseudo-elemento ::after en el componente.
+ * Duración larga (12s) para que sea muy sutil.
+ */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scanline-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanline-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Línea horizontal de 2px que recorre la pantalla */
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 255, 255, 0.03) 50%,
+    transparent 100%
+  );
+  background-size: 100% 4px;
+  animation: scanline 12s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Animación: glitch del título con múltiples colores ─────────────────── */
+/*
+ * Glitch multicolor para el título KODA.
+ * Cada capa usa un keyframe distinto con offsets diferentes
+ * para simular interferencia de señal RGB + verde + amarillo.
+ * Se activa cada 6s, dura 0.4s, pasos bruscos para efecto digital.
+ */
+
+/* Keyframe principal: desplazamiento horizontal agresivo */
+@keyframes glitch {
+  0%   { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  10%  { clip-path: inset(10% 0 60% 0); transform: translate(-4px, 1px); }
+  20%  { clip-path: inset(50% 0 20% 0); transform: translate(4px, -2px); }
+  30%  { clip-path: inset(20% 0 70% 0); transform: translate(-3px, 3px); }
+  40%  { clip-path: inset(70% 0 5%  0); transform: translate(3px, -3px); }
+  50%  { clip-path: inset(40% 0 40% 0); transform: translate(-2px, 2px); }
+  60%  { clip-path: inset(5%  0 80% 0); transform: translate(2px, -1px); }
+  70%  { clip-path: inset(80% 0 10% 0); transform: translate(-4px, 0);   }
+  80%  { clip-path: inset(30% 0 50% 0); transform: translate(4px, 2px);  }
+  90%  { clip-path: inset(60% 0 30% 0); transform: translate(-2px, -2px);}
+  100% { clip-path: inset(0 0 100% 0);  transform: translate(0); }
+}
+
+/* Keyframe alternativo: desplazamiento vertical para capas secundarias */
+@keyframes glitch-alt {
+  0%   { clip-path: inset(100% 0 0 0); transform: translate(0); }
+  15%  { clip-path: inset(5% 0 75% 0); transform: translate(5px, -1px); }
+  25%  { clip-path: inset(60% 0 15% 0); transform: translate(-5px, 2px); }
+  35%  { clip-path: inset(25% 0 55% 0); transform: translate(3px, -3px); }
+  45%  { clip-path: inset(75% 0 10% 0); transform: translate(-3px, 1px); }
+  55%  { clip-path: inset(35% 0 45% 0); transform: translate(4px, -2px); }
+  65%  { clip-path: inset(15% 0 65% 0); transform: translate(-4px, 3px); }
+  75%  { clip-path: inset(85% 0 5%  0); transform: translate(2px, -1px); }
+  85%  { clip-path: inset(45% 0 35% 0); transform: translate(-2px, 2px); }
+  95%  { clip-path: inset(65% 0 25% 0); transform: translate(3px, -3px); }
+  100% { clip-path: inset(100% 0 0 0);  transform: translate(0); }
+}
+
+/* ── Capa 1: cian — canal R del split RGB ── */
+.glitch-layer-cyan {
+  position: absolute;
+  inset: 0;
+  color: #00ffff;
+  animation: glitch 6s steps(1) infinite;
+  animation-delay: 1.5s;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* ── Capa 2: magenta — canal G del split RGB ── */
+.glitch-layer-magenta {
+  position: absolute;
+  inset: 0;
+  color: #ff00ff;
+  animation: glitch 6s steps(1) infinite;
+  animation-delay: 1.55s;   /* 50ms de offset para el split RGB */
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ── Capa 3: lima — canal adicional verde ── */
+.glitch-layer-lime {
+  position: absolute;
+  inset: 0;
+  color: #00ff00;
+  animation: glitch-alt 6s steps(1) infinite;
+  animation-delay: 1.6s;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ── Capa 4: amarillo — canal adicional cálido ── */
+.glitch-layer-yellow {
+  position: absolute;
+  inset: 0;
+  color: #ffff00;
+  animation: glitch-alt 6s steps(1) infinite;
+  animation-delay: 1.65s;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ─── Animación: cursor parpadeante ──────────────────────────────────────── */
+/*
+ * Cursor de bloque que parpadea en el preview de código.
+ */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ─── Animación: scan horizontal en inputs al hacer focus ────────────────── */
+/*
+ * Línea que recorre el input de izquierda a derecha al hacer focus.
+ * Duración: 0.3s, una sola vez (animation-iteration-count: 1).
+ * Se activa añadiendo la clase .input-scan al wrapper del input.
+ */
+@keyframes inputScan {
+  0%   { transform: translateX(-100%); opacity: 0.6; }
+  100% { transform: translateX(100%);  opacity: 0;   }
+}
+
+.input-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  animation: inputScan 0.3s ease-out forwards;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ─── Fuente JetBrains Mono para el título ───────────────────────────────── */
+
+.font-jetbrains {
+  font-family: var(--font-jetbrains), monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMACIONES GALÁCTICAS
+   Estrellas, nebulosa y partículas para el hero de la landing.
+   CSS puro — sin JS, sin librerías extra.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Estrellas parpadeantes ─────────────────────────────────────────────── */
+/*
+ * Tres velocidades de parpadeo para dar profundidad (cerca/medio/lejos).
+ */
+@keyframes star-twinkle-slow {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.4); }
+}
+@keyframes star-twinkle-mid {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%       { opacity: 0.8;  transform: scale(1.3); }
+}
+@keyframes star-twinkle-fast {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.2); }
+}
+
+/* ─── Nebulosa flotante ──────────────────────────────────────────────────── */
+/*
+ * Manchas de color que se mueven lentamente simulando gas interestelar.
+ */
+@keyframes nebula-drift-1 {
+  0%   { transform: translate(0, 0)    scale(1);    opacity: 0.12; }
+  33%  { transform: translate(30px, -20px) scale(1.05); opacity: 0.18; }
+  66%  { transform: translate(-20px, 15px) scale(0.97); opacity: 0.10; }
+  100% { transform: translate(0, 0)    scale(1);    opacity: 0.12; }
+}
+@keyframes nebula-drift-2 {
+  0%   { transform: translate(0, 0)    scale(1);    opacity: 0.08; }
+  40%  { transform: translate(-40px, 25px) scale(1.08); opacity: 0.14; }
+  80%  { transform: translate(25px, -15px) scale(0.95); opacity: 0.06; }
+  100% { transform: translate(0, 0)    scale(1);    opacity: 0.08; }
+}
+@keyframes nebula-drift-3 {
+  0%   { transform: translate(0, 0) scale(1);    opacity: 0.06; }
+  50%  { transform: translate(20px, 30px) scale(1.1); opacity: 0.12; }
+  100% { transform: translate(0, 0) scale(1);    opacity: 0.06; }
+}
+
+/* ─── Partícula flotante ─────────────────────────────────────────────────── */
+/*
+ * Puntos de luz que suben lentamente como polvo estelar.
+ */
+@keyframes particle-float {
+  0%   { opacity: 0; transform: translateY(0) translateX(0); }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-120px) translateX(20px); }
+}
+@keyframes particle-float-2 {
+  0%   { opacity: 0; transform: translateY(0) translateX(0); }
+  10%  { opacity: 0.8; }
+  90%  { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-100px) translateX(-15px); }
+}
+
+/* ─── Clases de estrellas ────────────────────────────────────────────────── */
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: #ffffff;
+  pointer-events: none;
+}
+.star-slow  { animation: star-twinkle-slow  var(--dur, 4s) ease-in-out infinite; }
+.star-mid   { animation: star-twinkle-mid   var(--dur, 3s) ease-in-out infinite; }
+.star-fast  { animation: star-twinkle-fast  var(--dur, 2s) ease-in-out infinite; }
+
+/* ─── Clases de nebulosa ─────────────────────────────────────────────────── */
+
+.nebula {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+.nebula-1 { animation: nebula-drift-1 18s ease-in-out infinite; }
+.nebula-2 { animation: nebula-drift-2 24s ease-in-out infinite; }
+.nebula-3 { animation: nebula-drift-3 30s ease-in-out infinite; }
+
+/* ─── Partículas ─────────────────────────────────────────────────────────── */
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.particle-a { animation: particle-float   var(--dur, 6s) ease-in-out infinite; }
+.particle-b { animation: particle-float-2 var(--dur, 8s) ease-in-out infinite; }
+
+/* ─── Glow pulsante para el CTA final ───────────────────────────────────── */
+
+@keyframes cta-glow-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(0,255,255,0.08), 0 0 80px rgba(0,255,255,0.04); }
+  50%       { box-shadow: 0 0 60px rgba(0,255,255,0.15), 0 0 120px rgba(0,255,255,0.08), 0 0 200px rgba(0,255,255,0.03); }
+}
+.cta-glow {
+  animation: cta-glow-pulse 4s ease-in-out infinite;
+}
+
+/* ─── Línea de horizonte galáctica ──────────────────────────────────────── */
+
+@keyframes horizon-scan {
+  0%   { opacity: 0.3; transform: scaleX(0.8); }
+  50%  { opacity: 0.7; transform: scaleX(1.05); }
+  100% { opacity: 0.3; transform: scaleX(0.8); }
+}
+.horizon-line {
+  animation: horizon-scan 6s ease-in-out infinite;
 }
