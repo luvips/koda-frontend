@@ -52,12 +52,31 @@ async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  // Soporta endpoints con o sin prefijos heredados (/api o /api/v1)
+  // Soporta endpoints con o sin prefijos heredados (/api, /api/v1, /api/api/v1)
   // para evitar rutas duplicadas como /api/api/v1/... en producción.
-  const normalizedEndpoint = endpoint
+  const endpointSegments = endpoint
     .replace(/^\/+/, '')
-    .replace(/^api\/v1\/?/, '')
-    .replace(/^api\/?/, '')
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+
+  while (endpointSegments[0] === 'api') {
+    endpointSegments.shift()
+  }
+
+  if (endpointSegments[0] === 'v1') {
+    endpointSegments.shift()
+  }
+
+  while (endpointSegments[0] === 'api') {
+    endpointSegments.shift()
+  }
+
+  if (endpointSegments[0] === 'v1') {
+    endpointSegments.shift()
+  }
+
+  const normalizedEndpoint = endpointSegments.join('/')
 
   const url = `${API_BASE_URL.replace(/\/+$/, '')}/${normalizedEndpoint}`
 
