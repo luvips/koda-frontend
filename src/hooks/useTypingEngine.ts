@@ -25,6 +25,7 @@ export interface TypingResult {
   precision:     number;
   totalErrors:   number;
   difficultKeys: string[];
+  keyErrorsList: string[];
   durationMs:    number;
   status:        'COMPLETED' | 'INVALID';
 }
