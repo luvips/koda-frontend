@@ -26,14 +26,16 @@ import {
   Tooltip,
   type TooltipContentProps,
 } from 'recharts';
-import { WPM_HISTORY } from '@/lib/dashboard-mock';
 
-// ─── Tipos locales para el tooltip ───────────────────────────────────────────
-
-// ValueType y NameType no se re-exportan desde el índice de recharts en esta
-// versión, así que los definimos localmente para evitar el error de importación.
 type ValueType = number | string | ReadonlyArray<number | string>;
 type NameType  = number | string;
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+interface WpmChartProps {
+  history: { date: string; avgWpm: number; sessions: number }[];
+  loading: boolean;
+}
 
 // ─── Tooltip personalizado ────────────────────────────────────────────────────
 
@@ -77,120 +79,70 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<ValueType
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export function WpmChart() {
+export function WpmChart({ history, loading }: WpmChartProps) {
+  // Formateamos las fechas para mostrar solo "MMM DD" en el eje X
+  const chartData = history.map((d) => ({
+    date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    wpm: d.avgWpm,
+    sessions: d.sessions,
+  }));
+
   return (
-    // Animación de fade-in al montar la gráfica
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay: 0.3 }}
       className="flex flex-col gap-4"
     >
-      {/* ── Título de sección ── */}
-      <p
-        className="font-mono uppercase tracking-widest"
-        style={{ fontSize: '0.75rem', color: '#888888' }}
-      >
+      <p className="font-mono uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#888888' }}>
         WPM History — Last 30 Days
       </p>
 
-      {/* ── Gráfica Recharts ── */}
-      <ResponsiveContainer width="100%" height={280}>
-        <LineChart
-          data={WPM_HISTORY}
-          margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
-        >
-          {/* Grid apenas visible */}
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#111111"
-            vertical={false}
-          />
-
-          {/* Eje X: fechas en font-mono pequeño */}
-          <XAxis
-            dataKey="date"
-            tick={{ fill: '#333333', fontFamily: 'monospace', fontSize: 11 }}
-            axisLine={{ stroke: '#1a1a1a' }}
-            tickLine={false}
-            // Mostrar solo cada 5 fechas para no saturar
-            interval={4}
-          />
-
-          {/* Eje Y: valores WPM */}
-          <YAxis
-            tick={{ fill: '#333333', fontFamily: 'monospace', fontSize: 11 }}
-            axisLine={false}
-            tickLine={false}
-            domain={['auto', 'auto']}
-          />
-
-          {/* Tooltip personalizado — se pasa como función para que Recharts inyecte los props */}
-          <Tooltip content={(props) => <CustomTooltip {...props} />} />
-
-          {/* Línea WPM: cian, strokeWidth 2 */}
-          <Line
-            type="monotone"
-            dataKey="wpm"
-            stroke="#00ffff"
-            strokeWidth={2}
-            dot={false}
-            // Punto activo al hover: cian con borde negro
-            activeDot={{
-              r: 4,
-              fill: '#00ffff',
-              stroke: '#000000',
-              strokeWidth: 2,
-            }}
-          />
-
-          {/* Línea Precision: lima, strokeWidth 1.5, dashed */}
-          <Line
-            type="monotone"
-            dataKey="precision"
-            stroke="#00ff00"
-            strokeWidth={1.5}
-            strokeDasharray="4 2"
-            dot={false}
-            activeDot={{
-              r: 3,
-              fill: '#00ff00',
-              stroke: '#000000',
-              strokeWidth: 2,
-            }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-
-      {/* ── Leyenda manual ── */}
-      <div className="flex items-center gap-6">
-        {/* Leyenda WPM */}
-        <div className="flex items-center gap-2">
-          <span
-            className="inline-block h-0.5 w-4 rounded"
-            style={{ backgroundColor: '#00ffff' }}
-            aria-hidden="true"
-          />
-          <span className="font-mono" style={{ fontSize: '11px', color: '#444444' }}>
-            WPM
+      {/* Estado vacío o cargando */}
+      {loading ? (
+        <div className="flex h-[280px] items-center justify-center">
+          <span className="font-mono text-xs" style={{ color: '#333333' }}>Cargando historial...</span>
+        </div>
+      ) : chartData.length === 0 ? (
+        <div className="flex h-[280px] items-center justify-center">
+          <span className="font-mono text-xs" style={{ color: '#333333' }}>
+            Completa sesiones para ver tu historial
           </span>
         </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#111111" vertical={false} />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: '#333333', fontFamily: 'monospace', fontSize: 11 }}
+              axisLine={{ stroke: '#1a1a1a' }}
+              tickLine={false}
+              interval={Math.max(0, Math.floor(chartData.length / 6))}
+            />
+            <YAxis
+              tick={{ fill: '#333333', fontFamily: 'monospace', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              domain={['auto', 'auto']}
+            />
+            <Tooltip content={(props) => <CustomTooltip {...props} />} />
+            <Line
+              type="monotone"
+              dataKey="wpm"
+              stroke="#00ffff"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, fill: '#00ffff', stroke: '#000000', strokeWidth: 2 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
 
-        {/* Leyenda Precision (línea punteada) */}
-        <div className="flex items-center gap-2">
-          <span
-            className="inline-block"
-            style={{
-              width: 16,
-              height: 1.5,
-              backgroundImage: 'repeating-linear-gradient(to right, #00ff00 0, #00ff00 4px, transparent 4px, transparent 6px)',
-            }}
-            aria-hidden="true"
-          />
-          <span className="font-mono" style={{ fontSize: '11px', color: '#444444' }}>
-            Precision
-          </span>
-        </div>
+      {/* Leyenda */}
+      <div className="flex items-center gap-2">
+        <span className="inline-block h-0.5 w-4 rounded" style={{ backgroundColor: '#00ffff' }} aria-hidden="true" />
+        <span className="font-mono" style={{ fontSize: '11px', color: '#444444' }}>WPM promedio por día</span>
       </div>
     </motion.div>
   );
