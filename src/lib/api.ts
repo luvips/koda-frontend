@@ -4,8 +4,8 @@
  * Maneja autenticación, headers y errores de forma centralizada.
  */
 
-// Usamos un proxy interno de Next para evitar problemas de CORS en navegador.
-const API_BASE_URL = '/api/'
+// URL base del backend — se obtiene de la variable de entorno
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 // ─── Tipos de respuesta del backend ───────────────────────────────────────────
 
