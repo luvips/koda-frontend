@@ -44,12 +44,23 @@ export function SessionsTable({ initialSessions = [], isLoading = false }: Sessi
                   <td className="py-3 pr-4 font-mono text-xs text-zinc-400">
                     {session.snippet?.language?.name || 'Desconocido'}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-xs" style={{ color: session.snippet?.difficulty === 'HARD' ? '#ff00ff' : '#00ff00' }}>
-                    {session.snippet?.difficulty || 'EASY'}
+                  <td className="py-3 pr-4 font-mono text-xs" style={{
+                    color: session.snippet?.difficulty === 'HARD' ? '#ff00ff' :
+                           session.snippet?.difficulty === 'MEDIUM' ? '#ffff00' : '#00ff00'
+                  }}>
+                    {session.snippet?.difficulty === 'EASY' ? 'Fácil' :
+                     session.snippet?.difficulty === 'MEDIUM' ? 'Medio' :
+                     session.snippet?.difficulty === 'HARD' ? 'Difícil' : 'Fácil'}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-xs font-bold text-cyan-400">{session.wpm}</td>
+                  <td className="py-3 pr-4 font-mono text-xs font-bold text-cyan-400">{Math.round(session.wpm)}</td>
                   <td className="py-3 pr-4 font-mono text-xs text-lime-400">{session.accuracy || session.precision}%</td>
-                  <td className="py-3 font-mono text-xs font-semibold text-cyan-400">COMPLETED</td>
+                  <td className="py-3 font-mono text-xs font-semibold" style={{
+                    color: session.status === 'COMPLETED' ? '#00ffff' :
+                           session.status === 'INVALID' ? '#ff00ff' : '#888888'
+                  }}>
+                    {session.status === 'COMPLETED' ? 'Completada' :
+                     session.status === 'INVALID' ? 'Inválida' : 'Incompleta'}
+                  </td>
                 </tr>
               ))
             )}

@@ -33,12 +33,12 @@ function CustomTooltip({ active, payload, label }: TooltipContentProps<ValueType
       <p className="mb-2" style={{ color: '#444444' }}>{label}</p>
       {payload[0] && (
         <p style={{ color: '#00ffff' }}>
-          WPM: <span className="font-bold">{payload[0].value}</span>
+          PPM: <span className="font-bold">{payload[0].value}</span>
         </p>
       )}
       {payload[1] && (
         <p style={{ color: '#00ff00' }}>
-          Precision: <span className="font-bold">{payload[1].value}%</span>
+          Precisión: <span className="font-bold">{payload[1].value}%</span>
         </p>
       )}
     </div>
@@ -54,7 +54,7 @@ export function WpmChart({ data = [] }: WpmChartProps) {
       className="flex flex-col gap-4"
     >
       <p className="font-mono uppercase tracking-widest text-[0.75rem] text-zinc-500">
-        WPM History — Last Sessions
+        Historial PPM — Últimas sesiones
       </p>
 
      {data.length === 0 ? (
@@ -106,15 +106,11 @@ export function WpmChart({ data = [] }: WpmChartProps) {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <span className="inline-block h-0.5 w-4 rounded bg-cyan-400" aria-hidden="true" />
-          <span className="font-mono text-[11px] text-zinc-500">WPM</span>
+          <span className="font-mono text-[11px] text-zinc-500">PPM</span>
         </div>
         <div className="flex items-center gap-2">
-          <span
-            className="inline-block"
-            style={{ width: 16, height: 1.5, backgroundImage: 'repeating-linear-gradient(to right, #00ff00 0, #00ff00 4px, transparent 4px, transparent 6px)' }}
-            aria-hidden="true"
-          />
-          <span className="font-mono text-[11px] text-zinc-500">Precision</span>
+          <span className="inline-block" style={{ width: 16, height: 1.5, backgroundImage: 'repeating-linear-gradient(to right, #00ff00 0, #00ff00 4px, transparent 4px, transparent 6px)' }} aria-hidden="true" />
+          <span className="font-mono text-[11px] text-zinc-500">Precisión</span>
         </div>
       </div>
     </motion.div>
