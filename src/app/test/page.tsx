@@ -139,7 +139,6 @@ export default function TestPage() {
           icon: snippet.language.icon ?? '',
         },
         specialCharacters: false,
-        source: 'api',
       });
     } catch {
       // Si falla el backend, usar snippet local como fallback
