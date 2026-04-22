@@ -48,7 +48,7 @@ export interface LoginResponse {
 
 // ─── Helper para hacer requests ───────────────────────────────────────────────
 
-async function fetchAPI<T>(
+export async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {

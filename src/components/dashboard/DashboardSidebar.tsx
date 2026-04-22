@@ -17,14 +17,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Keyboard, LayoutDashboard, Trophy, Code2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+import type { ProgressSummary } from '@/hooks/useProgress';
 
 interface DashboardSidebarProps {
-  /** Controla visibilidad en móvil */
   isOpen: boolean;
-  /** Cierra el sidebar en móvil al navegar */
   onClose: () => void;
+  progressData?: ProgressSummary | null;
 }
 
 // ─── Links de navegación ──────────────────────────────────────────────────────
@@ -62,10 +60,8 @@ function SidebarStat({ icon, value, label, color }: SidebarStatProps) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
+export function DashboardSidebar({ isOpen, onClose, progressData }: DashboardSidebarProps) {
   const pathname = usePathname();
-
-  // Usuario real desde el store de Zustand
   const user = useStore((s) => s.user);
 
   return (
@@ -109,23 +105,23 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           {/* Separador */}
           <div className="h-px" style={{ backgroundColor: '#111111' }} />
 
-          {/* ── Stats rápidas compactas ── */}
+          {/* Stats rápidas con datos reales del endpoint /progress/summary */}
           <div className="flex flex-col gap-4">
             <SidebarStat
               icon={<Keyboard size={14} />}
-              value="—"
+              value={progressData?.totalSessions ?? '—'}
               label="Total Sessions"
               color="#ffff00"
             />
             <SidebarStat
               icon={<Trophy size={14} />}
-              value="— WPM"
+              value={progressData ? `${progressData.bestWpm} WPM` : '— WPM'}
               label="Best WPM"
               color="#00ffff"
             />
             <SidebarStat
               icon={<Code2 size={14} />}
-              value="—"
+              value={progressData?.favoriteLanguage ?? '—'}
               label="Fav Language"
               color="#00ff00"
             />
