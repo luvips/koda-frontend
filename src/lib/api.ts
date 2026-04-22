@@ -4,8 +4,8 @@
  * Maneja autenticación, headers y errores de forma centralizada.
  */
 
-// URL base del backend — cambiar según el entorno
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+// Usamos un proxy interno de Next para evitar problemas de CORS en navegador.
+const API_BASE_URL = '/api'
 
 // ─── Tipos de respuesta del backend ───────────────────────────────────────────
 
@@ -89,7 +89,7 @@ export interface LoginInput {
  * Registra un nuevo usuario en el sistema
  */
 export async function register(input: RegisterInput): Promise<RegisterResponse> {
-  const response = await fetchAPI<RegisterResponse>('/auth/register', {
+  const response = await fetchAPI<RegisterResponse>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(input),
   })
@@ -107,7 +107,7 @@ export async function register(input: RegisterInput): Promise<RegisterResponse> 
  * Inicia sesión con credenciales existentes
  */
 export async function login(input: LoginInput): Promise<LoginResponse> {
-  const response = await fetchAPI<LoginResponse>('/auth/login', {
+  const response = await fetchAPI<LoginResponse>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify(input),
   })
