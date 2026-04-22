@@ -2,23 +2,43 @@
 
 /**
  * ProtectedRoute.tsx
- * Wrapper que protege páginas que requieren autenticación.
+ * Protege páginas que requieren autenticación.
  *
- * Comportamiento:
- *  - Si el usuario está autenticado → renderiza los children normalmente
- *  - Si no está autenticado → muestra pantalla con alien animado y botón de login
- *  - Mientras verifica → pantalla negra sin flash
+ * Lee el token directamente de localStorage y verifica su expiración
+ * de forma síncrona antes del primer render, evitando race conditions
+ * con el store de Zustand.
  */
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
+// ─── Helper: verificar token en localStorage ──────────────────────────────────
+
+function checkLocalToken(): boolean {
+  if (typeof window === 'undefined') return false
+
+  const token = localStorage.getItem('token')
+  if (!token) return false
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const isExpired = payload.exp && Date.now() / 1000 > payload.exp
+    if (isExpired) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      return false
+    }
+    return true
+  } catch {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    return false
+  }
 }
 
-// Componente de pantalla de acceso denegado con el alien de Lottie
+// ─── Pantalla de acceso denegado ──────────────────────────────────────────────
+
 function AccessDeniedScreen() {
   const router = useRouter();
 
@@ -27,15 +47,13 @@ function AccessDeniedScreen() {
       className="flex min-h-screen flex-col items-center justify-center gap-8 px-6"
       style={{ backgroundColor: '#000000' }}
     >
-      {/* Script de Lottie — se carga una sola vez */}
       <script
         src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.10/dist/dotlottie-wc.js"
         type="module"
         async
       />
 
-      {/* Alien animado */}
-      {/* @ts-expect-error — dotlottie-wc es un web component externo sin tipos */}
+      {/* @ts-expect-error — web component externo sin tipos */}
       <dotlottie-wc
         src="https://lottie.host/37bf13b7-c3f2-4aa3-8fa6-0d706cd2a16e/v4egms5io1.lottie"
         style={{ width: '280px', height: '280px' }}
@@ -43,7 +61,6 @@ function AccessDeniedScreen() {
         loop
       />
 
-      {/* Mensaje */}
       <div className="flex flex-col items-center gap-3 text-center">
         <h2
           className="font-mono text-xl font-bold tracking-widest uppercase"
@@ -59,7 +76,6 @@ function AccessDeniedScreen() {
         </p>
       </div>
 
-      {/* Botones */}
       <div className="flex flex-col items-center gap-3 sm:flex-row">
         <button
           onClick={() => router.push('/login')}
@@ -85,36 +101,46 @@ function AccessDeniedScreen() {
   );
 }
 
+// ─── Componente principal ─────────────────────────────────────────────────────
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const isAuthenticated = useStore((s) => s.isAuthenticated);
   const initAuth = useStore((s) => s.initAuth);
 
-  const [checking, setChecking] = useState(true);
+  // Verificamos el token directamente en el estado inicial del componente
+  // useState con función lazy: se ejecuta una sola vez en el cliente
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    initAuth();
-    setChecking(false);
+    // Verificar token de forma síncrona
+    const hasValidToken = checkLocalToken();
+
+    if (hasValidToken) {
+      // Token válido — inicializar el store también
+      initAuth();
+      setIsAuthorized(true);
+    } else {
+      setIsAuthorized(false);
+    }
   }, [initAuth]);
 
-  // Mientras verifica, pantalla negra sin flash
-  if (checking) {
+  // Mientras verifica (null) → pantalla negra
+  if (isAuthorized === null) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ backgroundColor: '#000000' }}
-      >
-        <span className="font-mono text-xs tracking-widest" style={{ color: '#1a1a1a' }}>
-          •••
-        </span>
+      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#000000' }}>
+        <span className="font-mono text-xs" style={{ color: '#1a1a1a' }}>•••</span>
       </div>
     );
   }
 
-  // No autenticado → mostrar pantalla con alien
-  if (!isAuthenticated) {
+  // Sin token válido → pantalla alien
+  if (!isAuthorized) {
     return <AccessDeniedScreen />;
   }
 
-  // Autenticado → renderizar contenido protegido
+  // Token válido → contenido protegido
   return <>{children}</>;
 }
