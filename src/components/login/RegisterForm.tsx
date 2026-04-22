@@ -74,6 +74,7 @@ export function RegisterForm() {
   // ── Handler de submit ──────────────────────────────────────────────────────
 
   async function onSubmit(data: RegisterFormValues) {
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
@@ -103,14 +104,15 @@ export function RegisterForm() {
         // Email duplicado (409)
         setError('email', { message: 'Este email ya está registrado' });
         toast.error('Este email ya está registrado');
-      } else if (apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
+      } else if (apiError.status === 429 || apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
         // Rate limit (429)
-        toast.error('Demasiados intentos. Intenta en 15 minutos.');
+        const waitSeconds = apiError.retryAfter ?? 60;
+        toast.error(`Demasiados intentos. Intenta en ${waitSeconds}s.`);
       } else {
         // Error genérico
         toast.error('Error al crear la cuenta. Intenta de nuevo.');
       }
-
+    } finally {
       setIsLoading(false);
     }
   }

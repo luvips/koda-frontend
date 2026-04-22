@@ -12,6 +12,22 @@ const BACKEND_API_PREFIX = '/api/v1'
 
 const BACKEND_TIMEOUT_MS = 15000
 
+function getClientIp(headers: Headers): string | null {
+  const xForwardedFor = headers.get('x-forwarded-for')
+  if (xForwardedFor) return xForwardedFor
+
+  const xRealIp = headers.get('x-real-ip')
+  if (xRealIp) return xRealIp
+
+  const vercelForwardedFor = headers.get('x-vercel-forwarded-for')
+  if (vercelForwardedFor) return vercelForwardedFor
+
+  const cfConnectingIp = headers.get('cf-connecting-ip')
+  if (cfConnectingIp) return cfConnectingIp
+
+  return null
+}
+
 function getBackendBaseUrl(): string {
   const baseUrl = BACKEND_BASE_URL.trim()
 
@@ -63,6 +79,15 @@ async function proxyRequest(
     const outgoingHeaders = new Headers(request.headers)
     outgoingHeaders.delete('host')
     outgoingHeaders.delete('content-length')
+
+    const clientIp = getClientIp(request.headers)
+    if (clientIp) {
+      outgoingHeaders.set('x-forwarded-for', clientIp)
+      outgoingHeaders.set('x-real-ip', clientIp.split(',')[0].trim())
+    }
+
+    const incomingUrl = new URL(request.url)
+    outgoingHeaders.set('x-forwarded-proto', incomingUrl.protocol.replace(':', ''))
 
     const method = request.method.toUpperCase()
     const hasBody = method !== 'GET' && method !== 'HEAD'

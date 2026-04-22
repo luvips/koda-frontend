@@ -12,6 +12,8 @@ const API_BASE_URL = '/api/'
 export interface ApiError {
   error: string
   details?: Record<string, string[]>
+  status?: number
+  retryAfter?: number
 }
 
 export interface RegisterResponse {
@@ -62,11 +64,29 @@ async function fetchAPI<T>(
     headers,
   })
 
-  const data = await response.json()
+  const contentType = response.headers.get('content-type') || ''
+  const data = contentType.includes('application/json')
+    ? await response.json()
+    : await response.text()
 
   // Si la respuesta no es exitosa, lanzar error con el mensaje del backend
   if (!response.ok) {
-    throw data as ApiError
+    const apiError: ApiError =
+      typeof data === 'object' && data !== null && 'error' in data
+        ? (data as ApiError)
+        : { error: typeof data === 'string' ? data : `Request failed (${response.status})` }
+
+    apiError.status = response.status
+
+    const retryAfter = response.headers.get('retry-after')
+    if (retryAfter) {
+      const retryAfterSeconds = Number(retryAfter)
+      if (!Number.isNaN(retryAfterSeconds)) {
+        apiError.retryAfter = retryAfterSeconds
+      }
+    }
+
+    throw apiError
   }
 
   return data as T

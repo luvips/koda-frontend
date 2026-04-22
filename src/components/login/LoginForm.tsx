@@ -54,6 +54,7 @@ export function LoginForm() {
   // ── Handler de submit ──────────────────────────────────────────────────────
 
   async function onSubmit(data: LoginFormValues) {
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
@@ -80,14 +81,15 @@ export function LoginForm() {
         setError('email', { message: 'Credenciales incorrectas' });
         setError('password', { message: 'Credenciales incorrectas' });
         toast.error('Credenciales incorrectas');
-      } else if (apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
+      } else if (apiError.status === 429 || apiError.error === 'Demasiados intentos. Intenta en 15 minutos.') {
         // Rate limit (429)
-        toast.error('Demasiados intentos. Intenta en 15 minutos.');
+        const waitSeconds = apiError.retryAfter ?? 60;
+        toast.error(`Demasiados intentos. Intenta en ${waitSeconds}s.`);
       } else {
         // Error genérico
         toast.error('Error al iniciar sesión. Intenta de nuevo.');
       }
-
+    } finally {
       setIsLoading(false);
     }
   }
