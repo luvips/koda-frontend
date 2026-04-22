@@ -17,6 +17,7 @@ export interface ProgressSummary {
   totalSessions:     number;
   completedSessions: number;
   favoriteLanguage:  string | null;
+  difficultKeys:     string[];
   recentHistory:     { date: string; avgWpm: number; sessions: number }[];
 }
 
