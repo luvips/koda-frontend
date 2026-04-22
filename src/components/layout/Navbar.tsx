@@ -222,6 +222,7 @@ export function Navbar() {
   const logout = useStore((s) => s.logout);
 
   // Restaurar sesión desde localStorage al montar el componente
+  // Solo corre en el cliente, nunca en SSR — evita hydration mismatch
   useEffect(() => {
     initAuth();
   }, [initAuth]);

@@ -109,12 +109,11 @@ export interface LoginInput {
  * Registra un nuevo usuario en el sistema
  */
 export async function register(input: RegisterInput): Promise<RegisterResponse> {
-  const response = await fetchAPI<RegisterResponse>('/auth/register', {
+  const response = await fetchAPI<RegisterResponse>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(input),
   })
 
-  // Guardar token en localStorage
   if (response.data.token) {
     localStorage.setItem('token', response.data.token)
     localStorage.setItem('user', JSON.stringify(response.data.user))
@@ -127,12 +126,11 @@ export async function register(input: RegisterInput): Promise<RegisterResponse> 
  * Inicia sesión con credenciales existentes
  */
 export async function login(input: LoginInput): Promise<LoginResponse> {
-  const response = await fetchAPI<LoginResponse>('/auth/login', {
+  const response = await fetchAPI<LoginResponse>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify(input),
   })
 
-  // Guardar token en localStorage
   if (response.data.token) {
     localStorage.setItem('token', response.data.token)
     localStorage.setItem('user', JSON.stringify(response.data.user))
