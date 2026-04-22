@@ -105,21 +105,25 @@ export const useStore = create<StoreState>()((set, get) => ({
     set({ currentSnippet: candidates[randomIndex] });
   },
 
-  saveResult: async (result: SessionResult) => {
+ saveResult: async (result: SessionResult) => {
     set({ lastResult: result });
     const { currentSnippet, isAuthenticated } = get();
-    
     if (currentSnippet && isAuthenticated) {
       try {
-        await createSession({
+        const timeMs = (result as any).timeMs || 60000;
+        const durationMs = Math.max(1000, timeMs); 
+        const estimatedCorrectChars = Math.round(result.wpm * 5 * (durationMs / 60000));
+        const correctChars = (result as any).correctChars || estimatedCorrectChars;
+        const payload = {
           snippetId: currentSnippet.id,
-          wpm: result.wpm,
-          accuracy: result.precision,
-          mistakes: (result as any).mistakes || 0,
-          timeMs: (result as any).timeMs || 0
-        });
+          correctChars: correctChars,
+          totalErrors: (result as any).mistakes || 0,
+          durationMs: durationMs,
+          keyErrors: [] 
+        };
+        await createSession(payload);
       } catch (error) {
-        console.error("Error al guardar la sesión en el backend:", error);
+        console.error("Error al guardar en el backend:", error);
       }
     }
   },
