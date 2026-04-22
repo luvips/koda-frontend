@@ -5,9 +5,9 @@
 
 const BACKEND_BASE_URL =
   process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === 'development' ? 'http://localhost:4000' : '')
 
+// El prefijo que el backend espera — NO incluir si la API_URL ya lo tiene
 const BACKEND_API_PREFIX = '/api/v1'
 
 const BACKEND_TIMEOUT_MS = 15000
