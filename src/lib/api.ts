@@ -234,7 +234,8 @@ export async function fetchSnippet(
   return response.data
 }
 
-// Sesiones de Escritura
+// ─── Sesiones de Escritura ────────────────────────────────────────────
+
 export interface CreateSessionInput {
   snippetId: string;
   correctChars: number;
@@ -247,6 +248,12 @@ export async function createSession(input: CreateSessionInput) {
   const response = await fetchAPI<any>('/sessions', {
     method: 'POST',
     body: JSON.stringify(input),
+  })
+  return response
+}
+export async function getMySessions() {
+  const response = await fetchAPI<{ data: any[] }>('/sessions/mine', {
+    method: 'GET',
   })
   return response
 }
