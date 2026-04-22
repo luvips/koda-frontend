@@ -72,15 +72,27 @@ async function proxyRequest(
       clearTimeout(timeoutId)
     }
   } catch (error) {
-    const message = error instanceof Error && error.name === 'AbortError'
-      ? 'El backend no respondió a tiempo'
-      : 'Backend no configurado o inaccesible'
+    let status = 502
+    let message = 'No se pudo conectar con el backend'
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        status = 504
+        message = 'El backend no respondió a tiempo'
+      } else if (
+        error.message.includes('Backend URL no configurada') ||
+        error.message.includes('Backend URL invalida para produccion')
+      ) {
+        status = 500
+        message = error.message
+      }
+    }
 
     return Response.json(
       {
         error: message,
       },
-      { status: 504 }
+      { status }
     )
   }
 }
