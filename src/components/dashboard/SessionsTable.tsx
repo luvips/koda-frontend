@@ -25,8 +25,19 @@ function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+<<<<<<< HEAD
       <select value={lang} onChange={(e) => setLang(e.target.value)} style={selectStyle}>
         <option value="all">All Languages</option>
+=======
+      {/* Filtro de lenguaje */}
+      <select
+        value={lang}
+        onChange={(e) => setLang(e.target.value)}
+        style={selectStyle}
+        aria-label="Filtrar por lenguaje"
+      >
+        <option value="all">Todos los lenguajes</option>
+>>>>>>> 03636abb23a1f01b51a9b987a9ccf4d14ab02bca
         <option value="python">Python</option>
         <option value="typescript">TypeScript</option>
         <option value="javascript">JavaScript</option>
@@ -34,6 +45,7 @@ function FilterBar() {
         <option value="rust">Rust</option>
       </select>
 
+<<<<<<< HEAD
       <select value={diff} onChange={(e) => setDiff(e.target.value)} style={selectStyle}>
         <option value="all">All Difficulties</option>
         <option value="easy">Easy</option>
@@ -45,6 +57,31 @@ function FilterBar() {
         <option value="all">All Status</option>
         <option value="completed">Completed</option>
         <option value="invalid">Invalid</option>
+=======
+      {/* Filtro de dificultad */}
+      <select
+        value={diff}
+        onChange={(e) => setDiff(e.target.value)}
+        style={selectStyle}
+        aria-label="Filtrar por dificultad"
+      >
+        <option value="all">Todas las dificultades</option>
+        <option value="easy">Fácil</option>
+        <option value="medium">Medio</option>
+        <option value="hard">Difícil</option>
+      </select>
+
+      {/* Filtro de estado */}
+      <select
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
+        style={selectStyle}
+        aria-label="Filtrar por estado"
+      >
+        <option value="all">Todos los estados</option>
+        <option value="completed">Completada</option>
+        <option value="invalid">Inválida</option>
+>>>>>>> 03636abb23a1f01b51a9b987a9ccf4d14ab02bca
       </select>
 
       <CyberButton
@@ -53,7 +90,7 @@ function FilterBar() {
         onClick={() => { setLang('all'); setDiff('all'); setStatus('all'); }}
       >
         <RotateCcw size={12} />
-        Reset
+        Resetear
       </CyberButton>
     </div>
   );
@@ -143,7 +180,11 @@ export function SessionsTable() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <p className="font-mono uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#888888' }}>
+<<<<<<< HEAD
           Recent Sessions
+=======
+          Sesiones recientes
+>>>>>>> 03636abb23a1f01b51a9b987a9ccf4d14ab02bca
         </p>
         <FilterBar />
       </div>
@@ -152,7 +193,7 @@ export function SessionsTable() {
         <table className="w-full min-w-[560px]">
           <thead>
             <tr className="border-b" style={{ borderColor: '#111111' }}>
-              {['Date', 'Language', 'Difficulty', 'WPM', 'Precision', 'Status'].map((col) => (
+              {['Fecha', 'Lenguaje', 'Dificultad', 'PPM', 'Precisión', 'Estado'].map((col) => (
                 <th
                   key={col}
                   className="pb-3 pr-4 text-left font-mono uppercase tracking-widest"
@@ -187,7 +228,11 @@ export function SessionsTable() {
 
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs" style={{ color: '#333333' }}>
+<<<<<<< HEAD
           {sessions.length} sessions
+=======
+          1–8 de 23 sesiones
+>>>>>>> 03636abb23a1f01b51a9b987a9ccf4d14ab02bca
         </span>
         <div className="flex items-center gap-2">
           <button disabled className="flex h-7 w-7 items-center justify-center rounded border font-mono text-xs opacity-30" style={{ borderColor: '#222222', color: '#444444' }}>
